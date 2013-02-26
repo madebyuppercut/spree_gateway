@@ -31,7 +31,7 @@ module Spree
 
     def create_profile(payment)
       if payment.source.gateway_customer_profile_id.nil?
-        response = provider.store(payment.source)
+        response = provider.store(payment.source, map_to_billing_address(payment.order))
         if response.success?
           payment.source.update_attributes!(:gateway_customer_profile_id => response.params['customer_vault_id'])
           cc = response.params['braintree_customer'].fetch('credit_cards',[]).first
@@ -106,6 +106,19 @@ module Spree
 
       def adjust_options_for_braintree(creditcard, options)
         adjust_billing_address(creditcard, options)
+      end
+
+      def map_to_billing_address(order)
+        {
+          billing_address:
+          {
+            address1: order.bill_address.address1,
+            address2: order.bill_address.address2,
+            city: order.bill_address.city,
+            state: order.bill_address.state.abbr,
+            zip: order.bill_address.zipcode
+          }
+        }
       end
   end
 end
